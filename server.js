@@ -6,7 +6,8 @@ var createServer = function (port) {
     var server = express();
 
     server.configure(function(){
-        server.use(express.bodyParser());
+        server.use(express.json());
+        server.use(express.urlencoded());
         server.set('view engine', 'jshtml');
         server.use(express.cookieParser('mmmcheese'));
         server.use(express.static(__dirname + '/client'));
