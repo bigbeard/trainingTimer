@@ -24,7 +24,6 @@ var createServer = function (port) {
     server.listen(port, function(){
         console.log("Express server listening on port %d in %s mode", port, server.settings.env);
     });
-
 };
 
 createServer(port);
