@@ -1,80 +1,67 @@
-var countdownTimer = function(newCounter) {
+var countdownTimer = function(elementId, expiredCallback) {
     this.remainingTime = undefined;
-    this.counter = newCounter;
+    this.lastRemaining = undefined;
+    this.seconds = 0;
+    this.minutes = 0;
+    this.elementId = elementId;
+    this.element = undefined;
     this.timer = undefined;
     this.timeout = undefined;
+    this.onExpiry = expiredCallback;
 }
 
-// A function for starting a counter
 countdownTimer.prototype.start = function() {
-    console.log("start", this.remainingTime);
-
+    console.log("start", this.minutes, this.seconds);
     if (!this.remainingTime) {
-        this.remainingTime = ((this.counter.minutes * 60) + this.counter.seconds) * 1000;
-        console.log("remaing time set");
+        this.remainingTime = ((this.minutes * 60) + this.seconds) * 1000;
     };
 
-    console.log("start", this.remainingTime);
     // Find the time (in ms since The Epoch) at which
     // this item expires
     this.timeout = new Date().getTime() + this.remainingTime;
-    console.log("start", (new Date(this.timeout).toUTCString()));
 
-    // Get this counter's target element
-    this.counter.element = document.getElementById(this.counter.id);
-    if (this.counter.element) {
+    this.element = document.getElementById(this.elementId);
+    if (this.element) {
         var t = this;
-        // Do the first update      
         t.tick();
-        // Schedule the remaining ones to happen *roughly*
-        // every quarter second. (Once a second will look
-        // rough).
+
         this.timer = setInterval(function() { t.tick(); }, 250);
     }
 };
 
-// Function to stop a counter
 countdownTimer.prototype.stop = function() {
     if (this.timer) {
         clearInterval(this.timer);
         delete this.remainingTime;
         delete this.timer;
     }
-    //delete counter.element;
 };
 
 countdownTimer.prototype.pause = function() {
     if (this.timer)
     {
         this.remainingTime = Math.floor(this.timeout - new Date().getTime());
-        console.log("pause", this.remainingTime);
         clearInterval(this.timer);
         delete this.timer;
-        console.log("pause", "timer cleared");
     }
 };
 
-// The function called on each "tick"
 countdownTimer.prototype.tick =  function() {
     var remaining, str;
 
-    console.log("tick", (new Date(this.timeout).toUTCString()));
-
-    // How many seconds left?
     remaining = Math.floor(
         (this.timeout - new Date().getTime()) / 1000
     );
-    console.log("tick", remaining);
-    
-    // Same as last time?
-    if (remaining != this.counter.lastRemaining) {
-        // No, do an update
-        this.counter.lastRemaining = remaining;
+
+    if (remaining != this.lastRemaining) {
+        this.lastRemaining = remaining;
         if (remaining <= 0) {
-            // Done! Stop the counter.
-            str = "done";
-            //alert("Stopped " + counter.id);
-            this.stop(this.counter);
+            str = "0 seconds left";
+            this.stop();
+            this.element.innerHTML = str;
+            if (this.onExpiry) {
+                this.onExpiry();                
+            }
         } else {
             // More than a minute left?
             if (remaining >= 120) {
@@ -105,12 +92,8 @@ countdownTimer.prototype.tick =  function() {
                     str += Math.floor(remaining) + " seconds";
                 }
             }
-        
-            // Finish up
             str += " left";
+            this.element.innerHTML = str;
         }
-      
-        // Write to the element
-        this.counter.element.innerHTML = str;
     }
 };

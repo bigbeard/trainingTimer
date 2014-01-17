@@ -30,71 +30,96 @@ trainingTimerControllers.controller('indexController', ['$scope',
 
 trainingTimerControllers.controller('timerController', ['$scope',
 	function ($scope) {
-<<<<<<< HEAD
-		var counter1 = {"id":"defaultCountdown","minutes":0,"seconds":10};
-		var counter2 = {"id":"defaultCountdown2","minutes":1,"seconds":10};
-		var timer1 = new countdownTimer(counter1);
-		var timer2 = new countdownTimer(counter2);
-	
+		var planIntervals = undefined;
+
+		var plan = {name: "Plan 1",
+					intervals: [
+						{ name: "interval 1", seconds: 5, cadence: 90, effort: 8},
+						{ name: "interval 2", intervals: [
+							{name: "sub interval 1", seconds: 5, cadence: 20, effort: 4},
+							{name: "sub interval 2", seconds: 3, cadence: 50, effort: 9}
+						]},
+						{ name: "interval 3", seconds: 3, cadence: 80, effort: 3}
+					]
+				};
+
+		var getIntervalListFromIntervals = function (intervals, parentInterval) {
+			var planIntervals = new intervalList();
+
+			for(var i=0; i < intervals.length; i++) {
+				var planInterval = intervals[i];
+				var subIntervals = undefined;
+				
+				var newInterval = new interval(planInterval.name, planInterval.seconds, 
+										planInterval.cadence, planInterval.effort);
+
+				if (planInterval.intervals) {
+					var subIntervals = getIntervalListFromIntervals(planInterval.intervals, newInterval);
+				}
+
+				newInterval.parentInterval = parentInterval;
+				newInterval.intervals = subIntervals;
+
+				planIntervals.add(newInterval);
+			};
+
+			return planIntervals;
+		};
+
 		$scope.startTimer = function() {
-			timer1.start();
-			timer2.start();
+			planIntervals = getIntervalListFromIntervals(plan.intervals);
+			console.log(planIntervals);
+			$scope.sessionTitle = plan.name;
+			planIntervals.start(onExpiry, onIntervalStarted);
 		};
 
 		$scope.stopTimer = function() {
-			timer1.stop();
-			timer2.stop();
+			planIntervals.stop();
 		};
 
 		$scope.pauseTimer = function() {
-			timer1.pause();
-			timer2.pause();
-=======
-
-		$scope.plan = {name: "Plan 1",
-				intervals: [
-					{ name: "interval 1", time: "+5", cadence: 90, effort: 8},
-					{ name: "interval 2", time: "+3", candence: 100, effort: 4},
-					{ name: "interval 3", time: "+2", candence: 100, effort: 4}]
-				};
-
-		$scope.sessionTitle = $scope.plan.name;
-		//$scope.intervalCount = 0;
-
-		$scope.startTimer = function() {
-			$scope.intervalCount = 0;
-			var time = $scope.plan.intervals[$scope.intervalCount].time; 
-
-//			$('#defaultCountdown').countdown('destroy');
-			$('#defaultCountdown').countdown({until: time, onExpiry: expired, format: 'MS'}); 
+			planIntervals.pause();
 		};
 
-		$scope.resetTimer = function() {
-			$('#defaultCountdown').countdown('destroy');
+		$scope.unpauseTimer = function() {
+			planIntervals.unpause();
 		};
 
-		var expired = function () {
-			$scope.intervalCount += 1;
-			console.log($scope.intervalCount);
-			console.log($scope.plan);
-			
-			if ($scope.intervalCount > $scope.plan.intervals.count-1) {
-				alert('Finished!');
-			} else if ($scope.intervalCount = $scope.plan.intervals.count-1) {
- 				var time = $scope.plan.intervals[$scope.intervalCount].time; 
-				$('#defaultCountdown').countdown('destroy');
-				$('#defaultCountdown').countdown({until: time, onExpiry: expired, format: 'MS'}); 
-			} else {
- 				var time = $scope.plan.intervals[$scope.intervalCount].time; 
-				$('#defaultCountdown').countdown('destroy');
-				$('#defaultCountdown').countdown({until: time, onExpiry: expired2, format: 'MS'}); 				
+		var onExpiry = function () {
+			alert("finished!");
+		};
+
+		var onIntervalStarted = function(interval) {
+			console.log("controller onIntervalStarted", interval);
+
+			if (interval.parentInterval) {
+				$scope.parentIntervalName = displayIntervalDetails(interval.parentInterval);
 			}
+			else
+			{
+				$scope.parentIntervalName = "";
+			}
+			$scope.intervalName = displayIntervalDetails(interval);
+			setTimeout(function(){ $scope.$apply(); });
 		};
 
-		var expired2 = function () {
-			alert("all done!");
->>>>>>> ad096ad8ac87af61abe6ea98bf5c411c7c029b15
-		};
+		var displayIntervalDetails = function (interval) {
+			var intervalDisplay = interval.name;
+
+			if (interval.seconds) {
+				intervalDisplay = intervalDisplay.concat(" : length ", interval.seconds, " seconds");
+			}
+
+			if (interval.cadence) {
+				intervalDisplay = intervalDisplay.concat(" : cadence ", interval.cadence);
+			}
+
+			if (interval.effort) {
+				intervalDisplay = intervalDisplay.concat(" : effort ", interval.effort);
+			}
+
+			return intervalDisplay;
+		}
 	}]);
 
 trainingTimerControllers.controller('configureController', [
